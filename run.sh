@@ -1,7 +1,6 @@
 module use /soft/modulefiles/
 module load conda
-
-conda create -n VLMs python=3.11 -y 
 conda activate VLMs
 
-pip install -r requirements.txt
+python3 vllm_infer.py --model-type="mllama" --num-prompts=4 --modality="image"
+
