@@ -9,6 +9,7 @@ import random
 import string
 from PIL import Image
 import numpy as np
+import os, csv
 
 cache_dir = '/lus/grand/projects/datascience/krishnat/model_weights/LLaMA/llama_cache/'
 
@@ -408,9 +409,40 @@ def main(args):
         latencies.append(latency)
     
     avg_latency = np.mean(latencies)
-    text_t = args.max_input_len
-    image_length = int(args.image_size*args.image_size) 
     
+    text_tokens = args.num_prompts*(args.max_input_len + args.max_new_tokens) 
+    image_tokens = args.num_prompts*(int(args.image_size*args.image_size))
+    
+    multimodal_tokens = image_tokens + text_tokens 
+    
+    multimodal_token_throughput =  multimodal_tokens/avg_latency
+    multimodal_request_throughput = args.num_prompts/avg_latency
+    
+    list_1 = ["Hardware", "Num of Hardware", "Framework", "Model", "Input Length", "Output Length", "Image Size", "Batch Size",
+              "Text Tokens", "Image Tokens", "Multimodal Tokens",
+              "Avg Latency", "Multimodal Token Throughput", "Multimodal Request Throughput"]
+    
+    list_2 = ["Nvidia A100 GPU", args.num_gpus, "vLLM", args.model, args.max_input_len, args.max_new_tokens, args.image_size, args.num_promptse,
+              text_tokens, image_tokens, multimodal_tokens, 
+              avg_latency, multimodal_token_throughput, multimodal_request_throughput] 
+    
+
+    assert len(list_1) == len(list_2)
+
+    csv_file = "LangVision_Inference_Bench_vLLM_throughput.csv"
+    
+    file_exists = os.path.exists(csv_file)
+
+    with open(csv_file, 'a', newline = '') as csvfile:
+        writer = csv.writer(csvfile)
+        
+        if not file_exists:
+            writer.writerow(list_1)
+        
+        writer.writerow(list_2) 
+        
+    csvfile.close()
+
 
 
     for o in outputs:
