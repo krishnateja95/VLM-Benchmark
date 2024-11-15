@@ -17,7 +17,7 @@ cache_dir = '/lus/grand/projects/datascience/krishnat/model_weights/LLaMA/llama_
 def run_llava(modality: str, num_gpus: int):
     assert modality == "image"
     model_name = "llava-hf/llava-1.5-7b-hf"
-    llm = LLM(model="llava-hf/llava-1.5-7b-hf", max_model_len=4096, download_dir=cache_dir, tensor_parallel_size=num_gpus)
+    llm = LLM(model="llava-hf/llava-1.5-7b-hf", max_model_len=4096, download_dir=cache_dir, tensor_parallel_size=num_gpus, dtype="float16")
     return llm, model_name
 
 def get_llava_data(question: str):
@@ -185,6 +185,9 @@ def get_multi_modal_input(args):
         img_question = generate_random_prompt(args.max_input_len)
         image        = generate_blank_image(args.image_size)
 
+        print(image.size)
+        exit()
+
         # image = ImageAsset("cherry_blossom") \
         #     .pil_image.convert("RGB")
         # img_question = "What is the content of this image?"
@@ -246,7 +249,7 @@ def run_generation(args, llm, model, model_name, modality):
         outputs = llm.generate(inputs, sampling_params=sampling_params)
 
     latencies = []
-    for i in range(args.warmup_iterations):
+    for i in range(args.eval_iterations):
         start_time = time.perf_counter()
         outputs = llm.generate(inputs, sampling_params=sampling_params)
         end_time = time.perf_counter()
@@ -271,22 +274,23 @@ def run_generation(args, llm, model, model_name, modality):
             text_tokens, image_tokens, multimodal_tokens, 
             avg_latency, multimodal_token_throughput, multimodal_request_throughput] 
     
+    print(f"Avg Latency = {avg_latency}")
 
-    assert len(list_1) == len(list_2)
+    # assert len(list_1) == len(list_2)
 
-    csv_file = "Results/" + file_name_dict[args.model_type]
+    # csv_file = "Results/" + file_name_dict[args.model_type]
     
-    file_exists = os.path.exists(csv_file)
+    # file_exists = os.path.exists(csv_file)
 
-    with open(csv_file, 'a', newline = '') as csvfile:
-        writer = csv.writer(csvfile)
+    # with open(csv_file, 'a', newline = '') as csvfile:
+    #     writer = csv.writer(csvfile)
         
-        if not file_exists:
-            writer.writerow(list_1)
+    #     if not file_exists:
+    #         writer.writerow(list_1)
         
-        writer.writerow(list_2) 
+    #     writer.writerow(list_2) 
         
-    csvfile.close()
+    # csvfile.close()
 
 
 def main(args):
@@ -298,14 +302,14 @@ def main(args):
     modality = args.modality
     llm, model_name = model_example_map[model](modality, args.num_gpus)
 
-    for batch_size in [1, 16, 32, 64]:
-        for image_size in [128, 256, 512, 1024]:
-            for input_output_length in [128, 256, 512, 1024]:
-                args.num_prompts    = batch_size
-                args.image_size     = image_size
-                args.max_input_len  = input_output_length
-                args.max_new_tokens = input_output_length
-                run_generation(args, llm, model, model_name, modality)
+    # for batch_size in [1, 16, 32, 64]:
+    #     for image_size in [128, 256, 512, 1024]:
+    #         for input_output_length in [128, 256, 512, 1024]:
+    #             args.num_prompts    = batch_size
+    #             args.image_size     = image_size
+    #             args.max_input_len  = input_output_length
+    #             args.max_new_tokens = input_output_length
+    run_generation(args, llm, model, model_name, modality)
 
 
     # for o in outputs:
